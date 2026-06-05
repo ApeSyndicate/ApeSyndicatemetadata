@@ -49,20 +49,24 @@ jobs:
               
               for row in reader:
                   token_id = row.get('token_id')
-                  if not token_id:
+                  if not token_id or not token_id.strip():
                       continue
                   
-                  token_id = str(int(float(token_id)))
+                  try:
+                      token_id_clean = str(int(float(token_id.strip())))
+                  except ValueError:
+                      print(f"Skipping invalid row with token_id data: {token_id}")
+                      continue
                   
                   nft_data = {
-                      "name": f"Ape Syndicate #{token_id}",
+                      "name": f"Ape Syndicate #{token_id_clean}",
                       "description": "Official Ape Syndicate NFT Collection.",
-                      "image": f"https://apesyndicate.github.io/ApeSyndicateImage/{token_id}.png",
+                      "image": f"https://apesyndicate.github.io/ApeSyndicateImage/{token_id_clean}.png",
                       "attributes": []
                   }
                   
                   for key, value in row.items():
-                      if key.lower() in ['token_id', 'name', 'description', 'image']:
+                      if not key or key.strip().lower() in ['token_id', 'name', 'description', 'image']:
                           continue
                       if value and value.strip() and value.strip().lower() != 'none':
                           nft_data["attributes"].append({
@@ -70,11 +74,11 @@ jobs:
                               "value": value.strip()
                           })
                   
-                  output_file_path = os.path.join('metadata-output', token_id)
+                  output_file_path = os.path.join('metadata-output', token_id_clean)
                   with open(output_file_path, 'w', encoding='utf-8') as out_f:
                       json.dump(nft_data, out_f, indent=4)
 
-          print("Successfully generated all metadata files matching token_id column.")
+          print("Successfully generated all valid metadata files safely.")
           EOF
 
       - name: Run Metadata Generation Script
